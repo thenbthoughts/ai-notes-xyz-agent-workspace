@@ -56,7 +56,7 @@ In the application **Environment Variables** (Coolify passes these into the cont
 | Name | Required | Notes |
 | ---- | -------- | ----- |
 | `API_TOKEN` | Yes for protected API routes | Same value the client sends as `X-API-Token`. Empty → those routes return **503**. Mark as secret. |
-| `CUSTOM_USER` | No | Desktop HTTP basic auth username. Default `agentworkspace`. |
+| `CUSTOM_USER` | No | Desktop HTTP basic auth username. Default `abc`. |
 | `PASSWORD` | Yes on a public server | Desktop HTTP basic auth password. Default `agentworkspace`. Mark as secret. |
 | `TZ` | No | Example: `Asia/Kolkata`. |
 | `PUID` / `PGID` | No | linuxserver user ids. Defaults `1000` / `1000`. |
@@ -68,7 +68,7 @@ In the application **Environment Variables** (Coolify passes these into the cont
 
 Do not commit secrets. Redeploy after changing env vars so the container is recreated.
 
-Do not use the default `agentworkspace` / `agentworkspace` on a public server.
+Do not use the default `abc` / `agentworkspace` on a public server.
 
 ## Ports and domains
 
@@ -123,7 +123,7 @@ A check on `/` is the webtop GUI, not the API. Port **3000** is the desktop stre
 1. Save env vars, ports, domains, storages, and `--shm-size=1gb`.
 2. Click **Deploy** and wait for the image build (first build is slow).
 3. Open the API domain `/api/` (welcome text) and `/api/shell-engine/about`.
-4. Open the desktop domain and log in with `CUSTOM_USER` (default `agentworkspace`) and `PASSWORD`.
+4. Open the desktop domain and log in with `CUSTOM_USER` (default `abc`) and `PASSWORD` (default `agentworkspace`).
 5. Call protected routes with header `X-API-Token`.
 
 API reference: [api.md](api.md).
@@ -131,5 +131,5 @@ API reference: [api.md](api.md).
 ## Notes
 
 - Do not expose this stack on the public internet without a strong `API_TOKEN`. `/api/shell-engine/run-shell/execute` runs shell commands inside the container.
-- Set a strong `PASSWORD` in Coolify. Do not leave `agentworkspace` / `agentworkspace` if the instance is reachable beyond a trusted network.
+- Set a strong `PASSWORD` in Coolify. Do not leave the default `agentworkspace` password if the instance is reachable beyond a trusted network.
 - For local Docker, see [docker.md](docker.md).

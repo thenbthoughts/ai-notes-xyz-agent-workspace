@@ -31,7 +31,7 @@ docker compose up -d --build
 | Desktop HTTPS | https://localhost:3011 |
 | API | http://localhost:2001/api/ |
 
-Web login: `agentworkspace` / `agentworkspace`. Accept the self-signed cert on HTTPS.
+Web login: `abc` / `agentworkspace`. Accept the self-signed cert on HTTPS.
 
 ```bash
 docker compose down
