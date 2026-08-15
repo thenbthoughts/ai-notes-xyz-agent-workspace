@@ -1,5 +1,7 @@
 # Files
 
+Git: https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace
+
 Host bind mount: `./volume` → container `/config`.
 
 Agent files:

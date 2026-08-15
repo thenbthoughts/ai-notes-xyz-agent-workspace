@@ -7,8 +7,8 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Kolkata
-      - CUSTOM_USER=${CUSTOM_USER:-abc}
-      - PASSWORD=${PASSWORD:-abc}
+      - CUSTOM_USER=${CUSTOM_USER:-agentworkspace}
+      - PASSWORD=${PASSWORD:-agentworkspace}
       - TITLE=ai-notes-xyz-agent-workspace
       - HOST=0.0.0.0
       - EXPRESS_PORT=2001

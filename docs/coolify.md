@@ -1,78 +1,135 @@
 # Deploy with Coolify
 
-Coolify is a panel that builds and runs Docker apps on your own server. You point it at this repo, it builds the image, then you open the desktop and API in the browser.
+Git: https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace
 
-This image is large (Webtop + Chrome + LibreOffice + VS Code). Use a server with at least **8 GB RAM** and **20 GB** free disk. The first build can take 10–20 minutes.
+Deploy this repo on [Coolify](https://coolify.io/) as a **Dockerfile** application. Coolify builds the `Dockerfile`, injects env vars, and can put HTTPS in front of the API and the web desktop.
 
-## 1. Put the code on Git
+## Table of contents
 
-Push `ai-notes-xyz-agent-workspace` to GitHub (or GitLab / Gitea). Coolify will clone it and run `docker-compose.yml`.
+- [Docs](#docs)
+- [What you get](#what-you-get)
+- [Server requirements](#server-requirements)
+- [Create the application](#create-the-application)
+- [Environment variables](#environment-variables)
+- [Ports and domains](#ports-and-domains)
+- [Persistent storage](#persistent-storage)
+- [Shared memory](#shared-memory)
+- [Health check](#health-check)
+- [Deploy](#deploy)
+- [Notes](#notes)
 
-Do not commit `.env`. Secrets go in Coolify, not in git.
+## Docs
 
-## 2. Create the app in Coolify
+- [Docker and volumes](docker.md)
+- [API](api.md)
+- [Files on disk](files.md)
 
-1. Open Coolify.
-2. Open a project → **Add Resource**.
-3. Choose **Docker Compose** (from a git repository).
-4. Connect the repo and branch.
-5. Coolify should find `docker-compose.yml` in the project root.
-6. Save.
+## What you get
 
-## 3. Set environment variables
+One container, three internal ports (`EXPOSE` in the Dockerfile):
 
-In the resource, open **Environment Variables** and add at least:
+| Port | Service |
+| ---- | ------- |
+| **2001** | Express API (`/api`) |
+| **3000** | XFCE web desktop (HTTP / Selkies) |
+| **3001** | XFCE web desktop (container self-signed HTTPS) |
 
-| Name | Example | Why |
-| ---- | ------- | --- |
-| `API_TOKEN` | a long random string | Protects the API (`X-API-Token`) |
-| `CUSTOM_USER` | your desktop login | Webtop login name |
-| `PASSWORD` | a strong password | Webtop login password |
-| `TZ` | `Asia/Kolkata` | Clock inside the desktop |
+Use **3000** behind Coolify’s proxy. Coolify already terminates TLS, so do not point a public domain at **3001**.
 
-Leave `FILE_STORAGE_PATH=/config` as in compose.
+## Server requirements
 
-Do not use the default `abc` / `abc` on a public server.
+- Coolify on a Docker host with at least **8 GB RAM** (Webtop + Chrome + LibreOffice + VS Code)
+- **20 GB** free disk; the first build can take 10–20 minutes
 
-## 4. Keep files after redeploy
+## Create the application
 
-The desktop home is `/config` inside the container.
+1. In Coolify: **Projects** → your project → **+ New** → **Resource**.
+2. Choose a **Git** source and use https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace (`main`).
+3. Set the build pack to **Dockerfile**.
+4. Dockerfile location: `Dockerfile` (repo root). Base directory: `/` (repo root).
+5. Do not set a custom start command. The linuxserver webtop image already starts via s6 (`/init`); that launches the desktop and the API.
 
-In Coolify, add **persistent storage** so `/config` is not wiped on each deploy:
+## Environment variables
 
-- Destination path: `/config`
-- Source: a Coolify volume (or keep `./volume` if your server bind-mount works)
+In the application **Environment Variables** (Coolify passes these into the container at runtime):
 
-If Coolify asks whether to keep volumes when you delete the app, choose **Keep** if you still need the files.
+| Name | Required | Notes |
+| ---- | -------- | ----- |
+| `API_TOKEN` | Yes for protected API routes | Same value the client sends as `X-API-Token`. Empty → those routes return **503**. Mark as secret. |
+| `CUSTOM_USER` | No | Desktop HTTP basic auth username. Default `agentworkspace`. |
+| `PASSWORD` | Yes on a public server | Desktop HTTP basic auth password. Default `agentworkspace`. Mark as secret. |
+| `TZ` | No | Example: `Asia/Kolkata`. |
+| `PUID` / `PGID` | No | linuxserver user ids. Defaults `1000` / `1000`. |
+| `TITLE` | No | Desktop title. Default `ai-notes-xyz-agent-workspace`. |
+| `HOST` | No | API bind address. Dockerfile default `0.0.0.0`. |
+| `EXPRESS_PORT` | No | API port. Dockerfile default **2001**. |
+| `FILE_STORAGE_PATH` | No | File sandbox root. Leave **`/config`**. |
+| `LIBREOFFICE_BIN` | No | Convert binary. Default `soffice`. |
 
-## 5. Domains
+Do not commit secrets. Redeploy after changing env vars so the container is recreated.
 
-Coolify’s reverse proxy should talk to **HTTP**, not the container’s self-signed HTTPS.
+Do not use the default `agentworkspace` / `agentworkspace` on a public server.
 
-Add two domains (or one domain and one subdomain):
+## Ports and domains
 
-| What | Container port | Example |
-| ---- | -------------- | ------- |
-| Desktop | `3000` HTTP / `3001` HTTPS (host **3010** / **3011**) | `https://desk.example.com` |
-| API | `2001` | `https://api.example.com` |
+**General → Ports Exposes:** `2001,3000`
 
-Coolify already gives you HTTPS. Point the desktop proxy at container port **3000**, and the API proxy at **2001**.
+(Leave **3001** off the proxy.)
 
-After deploy:
+**Domains** — Coolify can attach more than one host; put the container port after the URL when it is not the first exposed port:
 
-- Desktop: open the desk URL, log in with `CUSTOM_USER` / `PASSWORD`
-- API: `https://api.example.com/api/shell-engine/about`
+| Domain example | Meaning |
+| -------------- | ------- |
+| `https://workspace-api.example.com:2001` | API, e.g. `https://workspace-api.example.com/api/` |
+| `https://workspace.example.com:3000` | XFCE desktop in the browser |
 
-## 6. Deploy
+If the UI only shows one “Ports Exposes” field as `2001`, add `3000` there first, then add the second domain with `:3000`.
 
-Click **Deploy**. Wait until the build finishes and the container is running.
+Selkies needs **WebSockets**. Coolify’s Traefik/Caddy proxy allows them by default; if the desktop loads but the stream stays black, check that WS upgrades are not stripped.
 
-If the desktop is blank or Chrome crashes, the server may be short on RAM, or `shm_size: 1gb` was dropped. That value is already in `docker-compose.yml` and should stay.
+You do not need host port mappings (`2001:2001`, `3010:3000`) when the Coolify proxy is used.
 
-## If something fails
+## Persistent storage
 
-- Build killed: not enough disk or RAM
-- API returns 503: `API_TOKEN` is empty
-- API returns 401: wrong `X-API-Token` header
-- Desktop 401 in the browser: you still need the Webtop username and password
-- Files gone after redeploy: `/config` was not a persistent volume
+**Storages** → add a mount (a named volume is fine):
+
+| Destination in container | What it holds |
+| ------------------------ | ------------- |
+| `/config` | Desktop home + API files (`FILE_STORAGE_PATH`) |
+
+That is `./volume` in local Docker. API paths stay under `/config/ai-notes-xyz-agent-workspace/shell` and `.../features`. See [files.md](files.md).
+
+Keep volumes when deleting the Coolify resource if you still need the files.
+
+## Shared memory
+
+The web desktop needs **1 GB** of `/dev/shm`. Set it in the application:
+
+**Advanced** (or **Custom Docker Options**): `--shm-size=1gb`
+
+Without this, the browser desktop is often unstable or black.
+
+## Health check
+
+Point Coolify’s health check at the API, not the desktop:
+
+- Port: **2001**
+- Path: `/api/` or `/api/shell-engine/about`
+
+A check on `/` is the webtop GUI, not the API. Port **3000** is the desktop stream.
+
+## Deploy
+
+1. Save env vars, ports, domains, storages, and `--shm-size=1gb`.
+2. Click **Deploy** and wait for the image build (first build is slow).
+3. Open the API domain `/api/` (welcome text) and `/api/shell-engine/about`.
+4. Open the desktop domain and log in with `CUSTOM_USER` (default `agentworkspace`) and `PASSWORD`.
+5. Call protected routes with header `X-API-Token`.
+
+API reference: [api.md](api.md).
+
+## Notes
+
+- Do not expose this stack on the public internet without a strong `API_TOKEN`. `/api/shell-engine/run-shell/execute` runs shell commands inside the container.
+- Set a strong `PASSWORD` in Coolify. Do not leave `agentworkspace` / `agentworkspace` if the instance is reachable beyond a trusted network.
+- For local Docker, see [docker.md](docker.md).

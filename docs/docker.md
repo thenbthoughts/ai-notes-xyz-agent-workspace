@@ -1,5 +1,7 @@
 # Docker
 
+Git: https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace
+
 ## Image
 
 [`Dockerfile`](../Dockerfile) builds from `linuxserver/webtop:ubuntu-xfce` and adds:
@@ -50,6 +52,6 @@ then starts the API as user `abc` on port **2001**.
 | `EXPRESS_PORT` | API port. Default **2001**. |
 | `API_TOKEN` | Secret for `X-API-Token`. Empty → protected routes return **503**. |
 | `FILE_STORAGE_PATH` | File sandbox root. In Docker: **`/config`**. |
-| `CUSTOM_USER` / `PASSWORD` | HTTP basic auth for the web desktop. Defaults `abc` / `abc`. |
+| `CUSTOM_USER` / `PASSWORD` | HTTP basic auth for the web desktop. Defaults `agentworkspace` / `agentworkspace`. |
 | `PUID` / `PGID` / `TZ` | linuxserver user / timezone. |
 | `LIBREOFFICE_BIN` | Binary for convert (default `soffice`). |

@@ -1,5 +1,7 @@
 # ai-notes-xyz-agent-workspace
 
+Git: https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace
+
 One Docker container: Ubuntu XFCE desktop in the browser, plus a token-protected Express API for files, zip, shell, and LibreOffice convert.
 
 Base image: `linuxserver/webtop:ubuntu-xfce`.
@@ -29,7 +31,7 @@ docker compose up -d --build
 | Desktop HTTPS | https://localhost:3011 |
 | API | http://localhost:2001/api/ |
 
-Web login: `abc` / `abc`. Accept the self-signed cert on HTTPS.
+Web login: `agentworkspace` / `agentworkspace`. Accept the self-signed cert on HTTPS.
 
 ```bash
 docker compose down

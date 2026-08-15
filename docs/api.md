@@ -1,5 +1,7 @@
 # API
 
+Git: https://github.com/thenbthoughts/ai-notes-xyz-agent-workspace
+
 All routes are under `/api`. Protected routes need header `X-API-Token: <your API_TOKEN>`.
 
 Default Docker URL: `http://localhost:2001`.
