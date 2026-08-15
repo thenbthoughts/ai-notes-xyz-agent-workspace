@@ -33,13 +33,15 @@ Same path rules. Needs system `zip` / `unzip`. Archive cap 80MB.
 
 Runs as the container user. Protect with a strong `API_TOKEN`.
 
-### LibreOffice convert
+### LibreOffice
 
 - **POST** `/api/shell-engine/libreoffice/convert` — JSON:
   - `relativePath` — input file
   - `format` — `pdf` (default), `docx`, `odt`, `xlsx`, `pptx`, …
   - `outputRelativeDir` — optional
   - `timeoutMs` — optional (default 60000, max 180000)
+
+- **POST** `/api/shell-engine/libreoffice/open` — JSON `{ "relativePath" }` — open the file in desktop LibreOffice.
 
 ## Local API only (no Docker desktop)
 

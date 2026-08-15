@@ -5,6 +5,7 @@ import routesShellEngineShell from './shellEngine/shellEngineShell.route';
 import routesShellEngineFile from './shellEngine/shellEngineFile.route';
 import routesShellEngineZip from './shellEngine/shellEngineZip.route';
 import routesLibreOffice from './shellEngine/libreOfficeConvert.route';
+import routesLibreOfficeOpen from './shellEngine/libreOfficeOpen.route';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/shell-engine/run-shell', routesShellEngineShell);
 router.use('/shell-engine/file', routesShellEngineFile);
 router.use('/shell-engine/zip', routesShellEngineZip);
 router.use('/shell-engine/libreoffice', routesLibreOffice);
+router.use('/shell-engine/libreoffice', routesLibreOfficeOpen);
 
 export default router;
