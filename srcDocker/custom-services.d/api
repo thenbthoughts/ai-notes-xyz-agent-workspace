@@ -1,0 +1,20 @@
+#!/usr/bin/with-contenv bash
+# Long-running Express API alongside the Webtop XFCE desktop.
+set -euo pipefail
+
+cd /app
+
+export NODE_ENV="${NODE_ENV:-production}"
+export HOST="${HOST:-0.0.0.0}"
+export EXPRESS_PORT="${EXPRESS_PORT:-2001}"
+export FILE_STORAGE_PATH="${FILE_STORAGE_PATH:-/config}"
+export LIBREOFFICE_BIN="${LIBREOFFICE_BIN:-soffice}"
+
+mkdir -p "${FILE_STORAGE_PATH}/ai-notes-xyz-agent-workspace/shell" \
+         "${FILE_STORAGE_PATH}/ai-notes-xyz-agent-workspace/features"
+chown -R abc:abc \
+  "${FILE_STORAGE_PATH}/ai-notes-xyz-agent-workspace" \
+  /app \
+  2>/dev/null || true
+
+exec s6-setuidgid abc node -r dotenv/config build/index.js

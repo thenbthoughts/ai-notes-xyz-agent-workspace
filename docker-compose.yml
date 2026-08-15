@@ -1,0 +1,29 @@
+services:
+  ai-notes-xyz-agent-workspace:
+    build: .
+    image: ai-notes-xyz-agent-workspace
+    container_name: ai-notes-xyz-agent-workspace
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - CUSTOM_USER=${CUSTOM_USER:-abc}
+      - PASSWORD=${PASSWORD:-abc}
+      - TITLE=ai-notes-xyz-agent-workspace
+      - HOST=0.0.0.0
+      - EXPRESS_PORT=2001
+      - API_TOKEN=${API_TOKEN:-}
+      - FILE_STORAGE_PATH=/config
+      - LIBREOFFICE_BIN=soffice
+    volumes:
+      - ./volume:/config
+    ports:
+      - "2001:2001"
+      - "3010:3000"
+      - "3011:3001"
+    shm_size: "1gb"
+    restart: unless-stopped
+
+# docker compose up -d --build
+# docker compose down
+# docker compose --env-file .env up -d --build
