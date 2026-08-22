@@ -5,7 +5,9 @@ import middlewareShellEngineKey from '../../middleware/middlewareVerifyToken';
 
 const router = Router();
 const DEFAULT_TIMEOUT_MS = 15_000;
-const MAX_TIMEOUT_MS = 120_000;
+/** Agent (Opencode) `opencode run` can take several minutes. Agent (beta) still defaults to 15s. */
+const MAX_TIMEOUT_MS = 600_000;
+const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 const execAsync = promisify(exec);
 
 router.post('/execute', middlewareShellEngineKey, async (req: Request, res: Response) => {
@@ -13,8 +15,20 @@ router.post('/execute', middlewareShellEngineKey, async (req: Request, res: Resp
         const {
             command,
             timeoutMs,
+            treatStderrAsFailure,
         } = req.body;
-        console.log('execute command: ', new Date().toISOString(), '. command=', command, '. with timeout.', timeoutMs);
+        const logCommand =
+            typeof command === 'string' && command.length > 500
+                ? `${command.slice(0, 500)}…`
+                : command;
+        console.log(
+            'execute command: ',
+            new Date().toISOString(),
+            '. command=',
+            logCommand,
+            '. with timeout.',
+            timeoutMs
+        );
 
         if (typeof command !== 'string' || command.trim().length === 0) {
             return res.status(400).json({ message: 'A non-empty command string is required' });
@@ -24,11 +38,15 @@ router.post('/execute', middlewareShellEngineKey, async (req: Request, res: Resp
         const effectiveTimeoutMs = Number.isFinite(parsedTimeoutMs)
             ? Math.min(Math.max(parsedTimeoutMs, 1), MAX_TIMEOUT_MS)
             : DEFAULT_TIMEOUT_MS;
+        const failOnStderr = treatStderrAsFailure !== false;
 
         try {
-            const { stdout, stderr } = await execAsync(command, { timeout: effectiveTimeoutMs });
+            const { stdout, stderr } = await execAsync(command, {
+                timeout: effectiveTimeoutMs,
+                maxBuffer: MAX_BUFFER_BYTES,
+            });
 
-            if (stderr!=='') {
+            if (failOnStderr && stderr !== '') {
                 return res.status(400).json({
                     message: 'Command execution failed',
                     error: 'Command execution failed',

@@ -1,0 +1,38 @@
+#!/usr/bin/with-contenv bash
+# OpenCode server alongside Webtop + Express API
+# Listens on 0.0.0.0:4096, protected by OPENCODE_SERVER_PASSWORD
+set -euo pipefail
+
+export PATH="/root/.opencode/bin:/config/.opencode/bin:/usr/local/bin:${PATH:-/usr/local/bin}"
+export OPENCODE_SERVER_PASSWORD="${OPENCODE_SERVER_PASSWORD:-password}"
+export OPENCODE_PORT="${OPENCODE_PORT:-4096}"
+export OPENCODE_HOST="${OPENCODE_HOST:-0.0.0.0}"
+
+# Ensure workspace dirs exist for OpenCode
+mkdir -p "${FILE_STORAGE_PATH:-/config}/ai-notes-xyz-agent-workspace/shell" 2>/dev/null || true
+chown -R abc:abc "${FILE_STORAGE_PATH:-/config}/ai-notes-xyz-agent-workspace" 2>/dev/null || true
+
+# Wait a moment for s6 to be ready
+sleep 1
+
+# Prefer /usr/local/bin/opencode (symlink) else check common locations
+OPENCODE_BIN="/usr/local/bin/opencode"
+if [ ! -x "$OPENCODE_BIN" ]; then
+  OPENCODE_BIN="/root/.opencode/bin/opencode"
+fi
+if [ ! -x "$OPENCODE_BIN" ]; then
+  OPENCODE_BIN="/config/.opencode/bin/opencode"
+fi
+
+if [ ! -x "$OPENCODE_BIN" ]; then
+  echo "[opencode] binary not found, checked /usr/local/bin/opencode, /root/.opencode/bin/opencode, /config/.opencode/bin/opencode — skipping start"
+  echo "[opencode] ls /root/.opencode/bin:"; ls -la /root/.opencode/bin 2>&1 || true
+  echo "[opencode] ls /config/.opencode/bin:"; ls -la /config/.opencode/bin 2>&1 || true
+  echo "[opencode] ls /usr/local/bin/opencode:"; ls -la /usr/local/bin/opencode 2>&1 || true
+  # Keep service alive but idle (s6 expects long-running)
+  exec sleep infinity
+fi
+
+echo "[opencode] starting $OPENCODE_BIN serve --port $OPENCODE_PORT --hostname $OPENCODE_HOST"
+# Use s6-setuidgid to run as abc (non-root) like the api service
+exec s6-setuidgid abc "$OPENCODE_BIN" serve --port "$OPENCODE_PORT" --hostname "$OPENCODE_HOST"

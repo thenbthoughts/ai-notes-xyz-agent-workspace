@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     xclip \
     xdotool \
+    xfce4-terminal \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -57,6 +58,13 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub \
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get update && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Install OpenCode (https://opencode.ai) — provides `opencode serve --port 4096`
+# Use HOME=/root so binary goes to /root/.opencode (not /config volume which is host-mounted and hides image content)
+RUN HOME=/root curl -fsSL https://opencode.ai/install | bash
+ENV PATH="/root/.opencode/bin:/config/.opencode/bin:/usr/local/bin:$PATH"
+ENV OPENCODE_SERVER_PASSWORD="password"
+ENV OPENCODE_PORT=4096
 
 RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc \
     | gpg --dearmor -o /usr/share/keyrings/packages.microsoft.gpg \
@@ -83,8 +91,9 @@ COPY --from=api-build /build/node_modules ./node_modules
 COPY --from=api-build /build/build ./build
 
 COPY srcDocker/custom-services.d/api /custom-services.d/api
-RUN sed -i 's/\r$//' /custom-services.d/api \
-    && chmod +x /custom-services.d/api \
+COPY srcDocker/custom-services.d/opencode /custom-services.d/opencode
+RUN sed -i 's/\r$//' /custom-services.d/api /custom-services.d/opencode \
+    && chmod +x /custom-services.d/api /custom-services.d/opencode \
     && chown -R abc:abc /app
 
 ENV NODE_ENV=production
@@ -96,7 +105,18 @@ ENV CUSTOM_USER=abc
 ENV PASSWORD=agentworkspace
 ENV DONT_PROMPT_WSL_INSTALL=1
 ENV ELECTRON_DISABLE_SANDBOX=1
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
-EXPOSE 2001 3000 3001
+# Ensure opencode is available to abc user + install puppeteer for browser automation
+# Copy binary out of /config volume so it survives host mount
+RUN npm install -g puppeteer 2>/dev/null || true \
+    && mkdir -p /usr/local/bin \
+    && if [ -x /root/.opencode/bin/opencode ]; then cp /root/.opencode/bin/opencode /usr/local/bin/opencode; elif [ -x /config/.opencode/bin/opencode ]; then cp /config/.opencode/bin/opencode /usr/local/bin/opencode; fi \
+    && chmod +x /usr/local/bin/opencode 2>/dev/null || true \
+    && chmod -R 755 /root/.opencode 2>/dev/null || true \
+    && chmod -R 755 /config/.opencode 2>/dev/null || true \
+    && ls -lh /usr/local/bin/opencode 2>&1 || echo "opencode not found at /usr/local/bin"
+
+EXPOSE 2001 3000 3001 4096
 
 # Entrypoint/CMD come from linuxserver webtop (s6-overlay).
