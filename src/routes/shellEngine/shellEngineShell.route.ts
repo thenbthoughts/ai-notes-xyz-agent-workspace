@@ -5,8 +5,8 @@ import middlewareShellEngineKey from '../../middleware/middlewareVerifyToken';
 
 const router = Router();
 const DEFAULT_TIMEOUT_MS = 15_000;
-/** Agent (Opencode) `opencode run` can take several minutes. Agent (beta) still defaults to 15s. */
-const MAX_TIMEOUT_MS = 600_000;
+/** Agent (Opencode) `opencode run` can run long jobs. Hard limit is 7 days. */
+const MAX_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 const execAsync = promisify(exec);
 
