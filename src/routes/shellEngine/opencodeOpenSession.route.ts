@@ -181,12 +181,21 @@ router.post('/open-session', middlewareShellEngineKey, async (req: Request, res:
         child.unref();
 
         const relativeDir = rel.value.split(/[/\\]/).join('/');
+        // Build Opencode web UI URL: http://localhost:4096/server/<base64(serverUrl)>/session/<id>
+        // Server URL is always http://localhost:4096 inside container; base64 without padding matches example
+        const serverUrl = `http://localhost:${process.env.OPENCODE_PORT || 4096}`;
+        const base64Server = Buffer.from(serverUrl).toString('base64').replace(/=+$/, '');
+        const webUrl = sessionId
+            ? `http://localhost:${process.env.OPENCODE_PORT || 4096}/server/${base64Server}/session/${sessionId}`
+            : `http://localhost:${process.env.OPENCODE_PORT || 4096}/`;
         return res.status(200).json({
             message: sessionId
                 ? `Opened OpenCode session ${sessionId}`
                 : 'Opened OpenCode in the thread workspace',
             relativeDir,
             sessionId,
+            webUrl,
+            base64Server,
         });
     } catch (error) {
         console.error(error);

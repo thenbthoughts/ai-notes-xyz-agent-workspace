@@ -33,6 +33,6 @@ if [ ! -x "$OPENCODE_BIN" ]; then
   exec sleep infinity
 fi
 
-echo "[opencode] starting $OPENCODE_BIN serve --port $OPENCODE_PORT --hostname $OPENCODE_HOST"
+echo "[opencode] starting $OPENCODE_BIN serve --port $OPENCODE_PORT --hostname $OPENCODE_HOST --cors http://localhost:3000 --cors http://localhost:3001"
 # Use s6-setuidgid to run as abc (non-root) like the api service
-exec s6-setuidgid abc "$OPENCODE_BIN" serve --port "$OPENCODE_PORT" --hostname "$OPENCODE_HOST"
+exec s6-setuidgid abc "$OPENCODE_BIN" serve --port "$OPENCODE_PORT" --hostname "$OPENCODE_HOST" --cors http://localhost:3000 --cors http://localhost:3001 --cors http://localhost:5173
